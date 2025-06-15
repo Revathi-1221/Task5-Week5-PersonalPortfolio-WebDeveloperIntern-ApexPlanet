@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>E-Commerce</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    header {
+      background-color: pink; color: black; padding: 1rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .cart-area {
+      display: flex; align-items: center; gap: 1rem;
+    }
+    .cart-counter, .toggle-btn, .clear-btn {
+      background: rgb(255, 255, 255); color: pink; font-weight: bold;
+    }
+    .cart-counter {
+      padding: 0.3rem 0.7rem; border-radius: 50px;
+    }
+    .toggle-btn, .clear-btn {
+      padding: 0.3rem 0.7rem; border-radius: 5px; border: none; cursor: pointer;
+    }
+    .category { padding: 1rem; }
+    .category h2 {
+      background: pink; color:black; padding: 0.5rem; border-radius: 5px;
+    }
+    .product-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem; margin-top: 1rem;
+    }
+    .product {
+      border: 1px solid white; border-radius: 8px; padding: 1rem;
+      text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .product h3 {
+      margin: 0.5rem 0; font-size: 1.1rem; color:black;
+      font-weight: bold; text-transform: capitalize;
+    }
+    .product img {
+      max-width: 100%; height: 150px; object-fit: contain;
+      margin-bottom: 0.5rem; border-radius: 4px;
+    }
+    .product p { margin: 0.3rem 0; }
+    .offer { color: red; font-style: italic; font-size: 0.9rem; }
+    .buttons { margin-top: 0.5rem; }
+    .buttons button {
+      margin: 0.3rem; padding: 0.5rem 1rem;
+      border: none; border-radius: 5px; cursor: pointer; color: white;
+    }
+    .add-cart { background-color: #0f766e; }
+    .buy-now { background-color: #2563eb; }
+    .view-details { background-color: #6b7280; }
+    .cart-preview {
+      display: none; background:pink;
+      padding: 1rem; border-top: 2px solid black;
+    }
+    .cart-item {
+      display: flex; align-items: center;
+      margin-bottom: 1rem; border-bottom: 1px solid pink;
+      padding-bottom: 0.5rem;
+    }
+    .cart-item img { height: 50px; margin-right: 1rem; }
+    .cart-item p { margin: 0; }
+    #payment-modal {
+      display: none; position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+      justify-content: center; align-items: center; z-index: 9999;
+    }
+    #payment-box {
+      background: white; padding: 2rem; border-radius: 12px;
+      width: 90%; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+    #payment-box input {
+      width: 100%; padding: 0.5rem; margin: 0.5rem 0;
+      border: 1px solid #ccc; border-radius: 6px;
+    }
+    #payment-box button {
+      margin: 0.4rem; padding: 0.5rem 1rem;
+      font-weight: bold; border: none; border-radius: 6px;
+      cursor: pointer;
+    }
+    .cancel-btn { background: #ef4444; color: white; }
+    .submit-btn { background: #0f766e; color: white; }
+
+    /* Optional UX Polish */
+    .buttons button:hover {
+      opacity: 0.9;
+      transform: scale(1.03);
+      transition: all 0.2s ease-in-out;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Womens Fashion World</h1>
+  <div class="cart-area">
+    <span>🛒 Cart: <span class="cart-counter" id="cart-count">0</span></span>
+    <button class="toggle-btn" onclick="toggleCart()">Show Cart</button>
+    <button class="clear-btn" onclick="clearCart()">Clear Cart</button>
+  </div>
+</header>
+
+<main id="main-content"></main>
+
+<section class="cart-preview" id="cart-preview">
+  <h2>Cart Items</h2>
+  <div id="cart-items"></div>
+</section>
+
+<div id="payment-modal">
+  <div id="payment-box">
+    <h2>Select Payment Method</h2>
+    <button onclick="showForm('GPay')">GPay</button>
+    <button onclick="showForm('PhonePe')">PhonePe</button>
+    <button onclick="showForm('Cash')">Cash</button><br><br>
+    <button class="cancel-btn" onclick="closePaymentModal()">Cancel</button>
+  </div>
+</div>
+
+<script>
+const products = [
+  { category: "Women's Clothing", name: "Floral Dress", price:1499, image:"https://people.com/thmb/HDmtg9bBAxNQ4ZxT6KjYMiYs9vg=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc():focal(999x0:1001x2)/fashion-item-roundup-dresses-tout-2000-4cce8c33186743e7a69acb3e3a40fcb0.jpg", description:"Elegant floral summer dress perfect for outings and dates.", offer:"Buy 1 Get 1 50% Off!" },
+  { category: "Women's Clothing", name: "Denim Jacket", price:1999, image:"https://cdn.fcglcdn.com/brainbees/images/products/zoom/18037999a.webp", description:"Stylish denim jacket with button closure.", offer:"10% off for students!" },
+  { category: "Women's Clothing", name: "Crop Top", price:599, image:"http://fashionpro.me/wp-content/uploads/2017/04/a653bff521d043179460412ba399ff34-1.jpg", description:"Trendy cotton crop top for casual wear.", offer:"Flat ₹100 Off!" },
+  { category: "Accessories", name: "Gold Plated Earrings", price:499, image:"https://cdn.exoticindia.com/images/products/original/jajewelry/ldb333.jpg", description:"Stunning gold‑plated earrings for traditional events.", offer:"Free gift box included!" },
+  { category: "Accessories", name: "Handbag", price:1899, image:"https://baghabitshq.com/wp-content/uploads/2022/09/Coach-Teri-Shoulder-Bag-In-Signature-Canvas-in-ChalkGlacierwhite-CA5481-768x768.jpeg", description:"Spacious and stylish handbag for daily use.", offer:"Flat ₹300 Off!" },
+  { category: "Accessories", name: "Sunglasses", price:699, image:"https://m.media-amazon.com/images/I/61cTMiKgGQL.UL1500.jpg", description:"Trendy UV‑protected sunglasses.", offer:"Buy 2 Get 1 Free!" },
+  { category: "Cosmetics", name: "Lipstick Set", price:499, image:"https://wp.scoopwhoop.com/wp-content/uploads/2019/01/5c4039477c99880cc938dfb4_f34d3fd4-cf0b-4ed4-a7ce-a7f90371b1a3.jpg", description:"Matte finish lipstick combo with 6 shades.", offer:"20% off launch sale!" },
+  {category: "Cosmetics", name: "Makeup Kit", price:499, image:"https://images-cdn.ubuy.co.in/65b9da8db5c8c053a0555aae-132-color-all-in-one-makeup.jpg", description:"More Beautiful Shades.", offer:"20% off launch sale!" },
+  { category: "Cosmetics", name: "Kajal & Eyeliner", price:299, image:"https://rukminim1.flixcart.com/image/612/612/l51d30w0/kajal/p/a/d/5-eyeconic-kajal-and-liquid-eyeliner-lakme-original-imagft23ys9derz9.jpeg?q=70", description:"Long‑lasting kajal and eyeliner duo.", offer:"Free shipping!" },
+  { category: "Winter Wear", name: "Woolen Scarf", price:399, image:"https://i.etsystatic.com/13701693/r/il/914a8b/3038492131/il_1588xN.3038492131_qb6h.jpg", description:"Soft and warm woolen scarf for winter.", offer:"Buy 1 Get 1 Free!" },
+  { category: "Winter Wear", name: "Trench Coat", price:2499, image:"https://image.hm.com/assets/hm/57/90/5790c476ca46c901ee43ec46a5129f63056ab6cd.jpg?imwidth=1260", description:"Stylish long trench coat for women.", offer:"Free shipping on prepaid!" },
+  { category: "Jewelry", name: "Bracelet", price:599, image:"https://tse2.mm.bing.net/th?id=OIP.lajpw6RXvD-sAfl1cLplWQHaHa&pid=Api&P=0&h=180", description:"Chic bracelet with crystal charms.", offer:"Limited Edition!" },
+  { category: "Jewelry", name: "Necklace Set", price:899, image:"https://tse2.mm.bing.net/th?id=OIP.iRFFU9LQ3QWogSosNMw4LAHaHa&pid=Api&P=0&h=180", description:"Elegant necklace and earring set for occasions.", offer:"Best Seller!" },
+  { category: "Women's Clothing", name: "Maxi Skirt", price:1299, image:"https://cdn.yoursclothing.com/Images/ProductImages/30135510-90b6-4f_157356_A.jpg", description:"Boho style flowy maxi skirt for casual and festive wear.", offer:"Extra 15% Off!" },
+  { category: "Accessories", name: "Silk Scrunchies", price:299, image:"https://i.etsystatic.com/23676591/r/il/301a01/2753954803/il_fullxfull.2753954803_n73l.jpg", description:"Smooth silk scrunchies in assorted colors.", offer:"Pack of 5!" },
+  { category: "Fragrances", name: "Rose Mist Perfume", price:799, image:"https://fimgs.net/mdimg/perfume/375x500.78515.jpg", description:"Long-lasting floral fragrance for everyday wear.", offer:"Limited Stock!" },
+   {category: "Fragrances", name: "Wattagirl Perfume", price:799, image:"https://rukminim2.flixcart.com/image/850/1000/kkbh8cw0/deodorant/a/u/u/layer-r-watta-girl-secret-crush-perfume-body-spray-layer-r-shot-original-imafzzt8teecka8h.jpeg?q=90&crop=false", description:"Long-lasting floral fragrance for everyday wear.", offer:"10% Off!" },
+  { category: "Jewelry", name: "Ring", price:899, image:"https://img.joomcdn.net/673d64cd51554c45480a216d04a23a08bf89316c_original.jpeg", description:"Elegant Ring  for occasions.", offer:"Best Offer!" },
+  ];
+
+const productList = document.getElementById("main-content");
+const cartCount = document.getElementById("cart-count");
+const cartPreview = document.getElementById("cart-preview");
+const cartItemsContainer = document.getElementById("cart-items");
+
+let cart = [], selectedProduct = null, selectedMethod = null;
+
+function updateCartView() {
+  cartItemsContainer.innerHTML = '';
+  cart.forEach(item => {
+    const div = document.createElement("div");
+    div.className = "cart-item";
+    div.innerHTML = `<img src="${item.image}" alt="${item.name}" />
+      <div><p><strong>${item.name}</strong></p><p>$${item.price.toFixed(2)}</p></div>`;
+    cartItemsContainer.appendChild(div);
+  });
+}
+
+function toggleCart() {
+  const isVisible = cartPreview.style.display === "block";
+  cartPreview.style.display = isVisible ? "none" : "block";
+  if (!isVisible) cartPreview.scrollIntoView({ behavior: "smooth" });
+}
+
+function clearCart() {
+  cart = [];
+  cartCount.textContent = "0";
+  updateCartView();
+}
+
+const grouped = {};
+products.forEach(p => {
+  if (!grouped[p.category]) grouped[p.category] = [];
+  grouped[p.category].push(p);
+});
+
+Object.entries(grouped).forEach(([category, items]) => {
+  const sec = document.createElement("section");
+  sec.className = "category";
+  sec.innerHTML = `<h2>${category}</h2><div class="product-grid"></div>`;
+  const grid = sec.querySelector(".product-grid");
+
+  items.forEach(product => {
+    const div = document.createElement("div");
+    div.className = "product";
+    div.innerHTML = `
+      <h3>${product.name}</h3>
+      <img src="${product.image}" alt="${product.name}" />
+      <p>$${product.price.toFixed(2)}</p>
+      <p class="offer">${product.offer}</p>
+      <div class="buttons">
+        <button class="add-cart">Add to Cart</button>
+        <button class="buy-now">Buy Now</button>
+        <button class="view-details">View Details</button>
+      </div>`;
+    grid.appendChild(div);
+
+    div.querySelector(".add-cart").addEventListener("click", () => {
+      cart.push(product);
+      cartCount.textContent = cart.length;
+      updateCartView();
+      alert(`${product.name} added to cart!`);
+    });
+
+    div.querySelector(".buy-now").addEventListener("click", () => {
+      selectedProduct = product;
+      document.getElementById("payment-modal").style.display = "flex";
+    });
+
+    div.querySelector(".view-details").addEventListener("click", () => {
+      alert(`Product: ${product.name}\n\n${product.description}`);
+    });
+  });
+
+  productList.appendChild(sec);
+});
+
+function closePaymentModal() {
+  document.getElementById("payment-modal").style.display = "none";
+  resetPaymentBox();
+}
+
+function resetPaymentBox() {
+  const box = document.getElementById("payment-box");
+  box.innerHTML = `
+    <h2>Select Payment Method</h2>
+    <button onclick="showForm('GPay')">GPay</button>
+    <button onclick="showForm('PhonePe')">PhonePe</button>
+    <button onclick="showForm('Cash')">Cash</button><br><br>
+    <button class="cancel-btn" onclick="closePaymentModal()">Cancel</button>
+  `;
+}
+
+function showForm(method) {
+  selectedMethod = method;
+  const box = document.getElementById("payment-box");
+  box.innerHTML = `
+    <h2>${method} Payment</h2>
+    <form onsubmit="submitForm(event)">
+      <input type="text" placeholder="IFSC Code / UPI ID" required>
+      <input type="text" placeholder="Bank Name" required>
+      <input type="text" value="₹${selectedProduct.price}" readonly>
+      <button type="submit" class="submit-btn">Submit Payment</button>
+    </form><br>
+    <button class="cancel-btn" onclick="closePaymentModal()">Cancel</button>
+  `;
+}
+
+function submitForm(event) {
+  event.preventDefault();
+  const inputs = event.target.querySelectorAll("input");
+  const contact = inputs[0].value;
+  const bank = inputs[1].value;
+  const amount = inputs[2].value;
+
+  alert(`✅ Payment Successful via ${selectedMethod}!\n\nProduct: ${selectedProduct.name}\nAmount: ${amount}\nContact/UPI: ${contact}\nBank: ${bank}`);
+  
+  closePaymentModal();
+  clearCart(); // Optional: clear cart after successful payment
+}
+</script>
+</body>
+</html>
